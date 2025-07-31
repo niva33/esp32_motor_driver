@@ -4,8 +4,12 @@ cmake_minimum_required(VERSION 3.16)
 
 set(EXTRA_COMPONENT_DIRS 
     ${CMAKE_SOURCE_DIR}/app
+    ${CMAKE_SOURCE_DIR}/service
     ${CMAKE_SOURCE_DIR}/bsp
-    ${CMAKE_SOURCE_DIR}/libs)
+    ${CMAKE_SOURCE_DIR}/libs
+    # ${CMAKE_SOURCE_DIR}/libs
+
+    )
 
 
 

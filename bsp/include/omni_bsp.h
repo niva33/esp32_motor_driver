@@ -1,3 +1,11 @@
+#ifndef OMNI_BSP_H_
+#define OMNI_BSP_H_
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
@@ -33,14 +41,17 @@ enum
  ******************************************************************************/
 esp_err_t omni_bsp_init();
 
-ptimer_handle_t omni_get_timer(uint8_t _channel);
+gptimer_handle_t omni_get_timer(uint8_t _channel);
 
 bdc_motor_handle_t omni_get_bdc_motor(uint8_t _motor_index);
 
 pcnt_unit_handle_t omni_get_encoder(uint8_t _motor_index);
 
 
+#ifdef __cplusplus
+};
+#endif
 
-
+#endif /*OMNI_BSP_H_*/
 
 

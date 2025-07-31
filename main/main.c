@@ -21,7 +21,7 @@ static const char *TAG = "example";
 #define EXAMPLE_EC11_GPIO_A 0
 #define EXAMPLE_EC11_GPIO_B 2
 
-extern void omni_init();
+extern void omni_bsp_init();
 
 static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
 {
@@ -34,7 +34,7 @@ static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_even
 
 void app_main(void)
 {
-    omni_init();
+    omni_bsp_init();
 
     ESP_LOGI(TAG, "install pcnt channels");
 

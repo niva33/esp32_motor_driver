@@ -153,29 +153,6 @@ esp_err_t bdc_motor_new_mcpwm_device(const bdc_motor_config_t *motor_config, con
     ESP_GOTO_ON_FALSE(mcpwm_motor, ESP_ERR_NO_MEM, err, TAG, "no mem for rmt motor");
 
 
-    //gpio
-    gpio_config_t io_conf = {};
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = motor_config->shift_reg.latch_gpio_num;
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
-    gpio_config(&io_conf);
-
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = motor_config->shift_reg.clock_gpio_num;
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
-    gpio_config(&io_conf);
-
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = motor_config->shift_reg.data_gpio_num;
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
-    gpio_config(&io_conf);
-
     // mcpwm timer
     mcpwm_timer_config_t timer_config = {
         .group_id = mcpwm_config->group_id,
