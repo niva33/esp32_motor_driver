@@ -13,7 +13,7 @@
 #include "driver/gpio.h"
 #include "esp_sleep.h"
 
-static const char *TAG = "example";
+static const char *TAG = "OMNI_MAIN";
 
 #define EXAMPLE_PCNT_HIGH_LIMIT 100
 #define EXAMPLE_PCNT_LOW_LIMIT  -100
@@ -34,9 +34,9 @@ static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_even
 
 void app_main(void)
 {
-    omni_bsp_init();
+    omni_entry();
 
-    ESP_LOGI(TAG, "install pcnt channels");
+    ESP_LOGI(TAG, "Successfully");
 
     
 }

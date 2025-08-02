@@ -8,6 +8,7 @@
 #include "driver/gptimer.h"
 #include "driver/pulse_cnt.h"
 #include "bdc_motor.h"
+#include "pid_ctrl.h"
 
 #include "omni_bsp.h"
 
@@ -56,6 +57,7 @@ static void omni_io_init();
 static void omni_timer_init();
 static void omni_bdc_motor_init();
 static void omni_encoder_init();
+static void omni_pid_init();
 
 /*******************************************************************************
 * Variables
@@ -75,6 +77,9 @@ static pcnt_unit_handle_t s_encoder_m0 = NULL;
 static pcnt_unit_handle_t s_encoder_m1 = NULL;
 
 static pcnt_unit_handle_t s_encoder_m2 = NULL;
+
+static pid_ctrl_block_handle_t s_pid_m0 = NULL;
+
 
 
 
@@ -210,11 +215,35 @@ static void omni_encoder_init()
     ESP_ERROR_CHECK(pcnt_unit_start(s_encoder_m0));
 }
 
+
+static void omni_pid_init()
+{
+    pid_ctrl_parameter_t  pid_m0_runtime_param = 
+    {
+        .kp = 0.6,
+        .ki = 0.4,
+        .kd = 0.2,
+        .cal_type = PID_CAL_TYPE_INCREMENTAL,
+        .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
+        .min_output   = 0,
+        .max_integral = 1000,
+        .min_integral = -1000,
+    }
+    pid_ctrl_config_t pid_m0_config = 
+    {
+        .init_param = pid_m0_runtime_param,
+    };
+
+    ESP_ERROR_CHECK(pid_new_control_block(&pid_m0_config, &s_pid_m0));
+
+}
+
+
 esp_err_t omni_bsp_init()
 {
     omni_io_init();
     omni_timer_init();
-    // omni_bdc_motor_init();
+    omni_bdc_motor_init();
     // omni_encoder_init();
     ESP_LOGI("DONE", "install pcnt channels");
 
@@ -267,6 +296,23 @@ pcnt_unit_handle_t omni_get_encoder(uint8_t _motor_index)
     {
         return s_encoder_m2;
     }
+    return NULL;
+}
+
+pid_ctrl_block_handle_t omni_get_pid(uint8_t _motor_index)
+{
+    if(_motor_index == OMNI_BDC_MOTOR_M0)
+    {
+        return s_pid_m0;
+    }
+    // else if(_motor_index == OMNI_BDC_MOTOR_M1)
+    // {
+    //     return s_encoder_m1;
+    // }
+    // else if(_motor_index == OMNI_BDC_MOTOR_M2)
+    // {
+    //     return s_encoder_m2;
+    // }
     return NULL;
 }
 
