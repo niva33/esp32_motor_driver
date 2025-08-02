@@ -47,6 +47,9 @@ bdc_motor_handle_t omni_get_bdc_motor(uint8_t _motor_index);
 
 pcnt_unit_handle_t omni_get_encoder(uint8_t _motor_index);
 
+pid_ctrl_block_handle_t omni_get_pid(uint8_t _motor_index);
+
+
 
 #ifdef __cplusplus
 };

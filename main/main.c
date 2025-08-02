@@ -15,22 +15,19 @@
 
 static const char *TAG = "OMNI_MAIN";
 
-#define EXAMPLE_PCNT_HIGH_LIMIT 100
-#define EXAMPLE_PCNT_LOW_LIMIT  -100
-
-#define EXAMPLE_EC11_GPIO_A 0
-#define EXAMPLE_EC11_GPIO_B 2
 
 extern void omni_bsp_init();
+extern void omni_entry();
 
-static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
-{
-    BaseType_t high_task_wakeup;
-    QueueHandle_t queue = (QueueHandle_t)user_ctx;
-    // send event data to queue, from this interrupt callback
-    xQueueSendFromISR(queue, &(edata->watch_point_value), &high_task_wakeup);
-    return (high_task_wakeup == pdTRUE);
-}
+
+// static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
+// {
+//     BaseType_t high_task_wakeup;
+//     QueueHandle_t queue = (QueueHandle_t)user_ctx;
+//     // send event data to queue, from this interrupt callback
+//     xQueueSendFromISR(queue, &(edata->watch_point_value), &high_task_wakeup);
+//     return (high_task_wakeup == pdTRUE);
+// }
 
 void app_main(void)
 {

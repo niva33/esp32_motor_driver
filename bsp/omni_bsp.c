@@ -21,8 +21,8 @@
 #define BDC_MCPWM_FREQ_HZ             25000    // 25KHz PWM
 #define BDC_MCPWM_DUTY_TICK_MAX       (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
 
-#define BDC_ENCODER_PCNT_HIGH_LIMIT     1000
-#define BDC_ENCODER_PCNT_LOW_LIMIT      -1000
+#define BDC_ENCODER_PCNT_HIGH_LIMIT     30000
+#define BDC_ENCODER_PCNT_LOW_LIMIT      -30000
 #define BDC_ENCODER_MAX_GLITCH_NS       1000
 
 #define SHIFT_REG_DS_GPIO               GPIO_NUM_22
@@ -30,8 +30,8 @@
 #define SHIFT_REG_LATCH_GPIO            GPIO_NUM_27
 
 
-#define BDC_ENCODER_M0_GPIO_A           GPIO_NUM_34
-#define BDC_ENCODER_M0_GPIO_B           GPIO_NUM_35
+#define BDC_ENCODER_M0_GPIO_A           GPIO_NUM_35
+#define BDC_ENCODER_M0_GPIO_B           GPIO_NUM_34
 #define BDC_PWM_M0_GPIO                 GPIO_NUM_21
 
 #define W5500_SPI_CS_GPIO               GPIO_NUM_5
@@ -169,6 +169,8 @@ static void omni_bdc_motor_init()
                                                &bdc_motor_m0_mcpwm_config,
                                                &s_bdc_motor_m0));
 
+    ESP_LOGI("bdc_motor", "Done");
+
 }
 
 static void omni_encoder_init()
@@ -201,15 +203,15 @@ static void omni_encoder_init()
         .level_gpio_num = BDC_ENCODER_M0_GPIO_A,
     };
     pcnt_channel_handle_t pcnt_chan_b = NULL;
-    ESP_ERROR_CHECK(pcnt_new_channel(s_encoder_m0, &chan_b_config, &pcnt_chan_b));
+    // ESP_ERROR_CHECK(pcnt_new_channel(s_encoder_m0, &chan_b_config, &pcnt_chan_b));
 
     ESP_ERROR_CHECK(pcnt_new_channel(s_encoder_m0, &chan_b_config, &pcnt_chan_b));
     ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_a, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
     ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
-    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_HIGH_LIMIT));
-    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_LOW_LIMIT));
+    // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_HIGH_LIMIT));
+    // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_LOW_LIMIT));
     ESP_ERROR_CHECK(pcnt_unit_enable(s_encoder_m0));
     ESP_ERROR_CHECK(pcnt_unit_clear_count(s_encoder_m0));
     ESP_ERROR_CHECK(pcnt_unit_start(s_encoder_m0));
@@ -228,7 +230,8 @@ static void omni_pid_init()
         .min_output   = 0,
         .max_integral = 1000,
         .min_integral = -1000,
-    }
+    };
+    
     pid_ctrl_config_t pid_m0_config = 
     {
         .init_param = pid_m0_runtime_param,
@@ -244,7 +247,7 @@ esp_err_t omni_bsp_init()
     omni_io_init();
     omni_timer_init();
     omni_bdc_motor_init();
-    // omni_encoder_init();
+    omni_encoder_init();
     ESP_LOGI("DONE", "install pcnt channels");
 
     return ESP_OK;

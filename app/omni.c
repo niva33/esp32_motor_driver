@@ -1,7 +1,5 @@
 #include "omni.h"
 
-
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -26,6 +24,8 @@ static omni_t g_omni_app =
     }
 };
 
+omni_t* g_omni_app_default = NULL;
+
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -45,11 +45,13 @@ static esp_err_t omni_drv_create(omni_t* _app)
 esp_err_t omni_init()
 {
     omni_t* app = &g_omni_app;
-    if(omni_drv_create() < 0)
+    if(omni_drv_create(app) < 0)
     {
         return -1;
     }
-    return 0;
 
     g_omni_app_default = app;
+
+    return 0;
+
 }
