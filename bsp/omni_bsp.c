@@ -7,11 +7,12 @@
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "driver/pulse_cnt.h"
+#include "driver/uart.h"
 #include "bdc_motor.h"
 #include "pid_ctrl.h"
 
 #include "omni_bsp.h"
-
+#include "tinysh.h"
 
 
 /*******************************************************************************
@@ -36,6 +37,10 @@
 
 #define W5500_SPI_CS_GPIO               GPIO_NUM_5
 
+#define CONSOLE_UART_PORT_NUM           CONFIG_EXAMPLE_UART_PORT_NUM
+#define CONSOLE_TX_BUFFER_SIZE          0
+#define CONSOLE_RX_BUFFER_SIZE          1024
+
 
 //esp32 s3
 // #define SHIFT_REG_DS_GPIO               GPIO_NUM_9
@@ -58,6 +63,8 @@ static void omni_timer_init();
 static void omni_bdc_motor_init();
 static void omni_encoder_init();
 static void omni_pid_init();
+static void console_init();
+
 
 /*******************************************************************************
 * Variables
@@ -238,8 +245,10 @@ static void omni_pid_init()
     };
 
     ESP_ERROR_CHECK(pid_new_control_block(&pid_m0_config, &s_pid_m0));
-
 }
+
+
+
 
 
 esp_err_t omni_bsp_init()
@@ -319,5 +328,10 @@ pid_ctrl_block_handle_t omni_get_pid(uint8_t _motor_index)
     return NULL;
 }
 
+
+void tinysh_char_out(unsigned char c)
+{
+    uart_write_bytes(CONSOLE_UART_PORT_NUM, &c, 1U);
+}
 
 

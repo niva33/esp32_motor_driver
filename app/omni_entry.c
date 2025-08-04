@@ -71,11 +71,10 @@ void omni_entry()
     omni_init();
     ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, 10 * 1000));
 
-
-
-
-    
-
-    // ESP_ERROR_CHECK(gptimer_start(main_thread));
+    char c;
+    while(1)
+    {
+        uart_read_bytes(CONSOLE_UART_PORT_NUM, &c, 1U, 20 / portTICK_PERIOD_MS);
+    }
 
 }
