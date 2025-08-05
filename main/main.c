@@ -18,6 +18,8 @@ static const char *TAG = "OMNI_MAIN";
 
 extern void omni_bsp_init();
 extern void omni_entry();
+extern void pid_testing();
+
 
 
 // static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
@@ -31,7 +33,9 @@ extern void omni_entry();
 
 void app_main(void)
 {
-    omni_entry();
+    // omni_entry();
+    pid_testing();
+
 
     ESP_LOGI(TAG, "Successfully");
 

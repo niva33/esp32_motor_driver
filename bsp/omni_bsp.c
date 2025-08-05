@@ -248,9 +248,6 @@ static void omni_pid_init()
 }
 
 
-
-
-
 esp_err_t omni_bsp_init()
 {
     omni_io_init();

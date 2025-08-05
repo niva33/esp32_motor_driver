@@ -47,18 +47,6 @@ void omni_entry()
 {
     omni_bsp_init();
 
-    // gptimer_handle_t main_thread = omni_get_timer(0);
-    // gptimer_event_callbacks_t cbs =
-    // {
-    //     .on_alarm = omni_main_proc,
-    // };
-    // ESP_ERROR_CHECK(gptimer_register_event_callbacks(main_thread, &cbs, NULL));
-    // ESP_ERROR_CHECK(gptimer_enable(main_thread));
-    // gptimer_alarm_config_t alarm_config1 = {
-    //     .alarm_count = 10000, // period = 10ms
-    // };
-    // ESP_ERROR_CHECK(gptimer_set_alarm_action(main_thread, &alarm_config1));
-
     ESP_LOGI("siuuu", "Create a timer to do PID calculation periodically");
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = omni_main_proc,
@@ -78,3 +66,4 @@ void omni_entry()
     }
 
 }
+
