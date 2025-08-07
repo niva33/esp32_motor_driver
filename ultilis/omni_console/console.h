@@ -6,8 +6,17 @@
 extern "C"{
 #endif
 
-#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include "esp_system.h"
 #include "esp_log.h"
+#include "esp_console.h"
+#include "esp_vfs_dev.h"
+#include "esp_vfs_fat.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "sdkconfig.h"
+
 
 
 /*******************************************************************************
@@ -18,15 +27,6 @@ extern "C"{
  * Prototypes
  ******************************************************************************/
 esp_err_t console_init();
-
-esp_err_t console_printf();
-
-esp_err_t console_putchar(char c);
-
-esp_err_t console_scanf();
-
-esp_err_t console_getchar();
-
 
 
 #ifdef __cplusplus

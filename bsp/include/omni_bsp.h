@@ -9,13 +9,32 @@ extern "C"{
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include "esp_system.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_console.h"
+#include "argtable3/argtable3.h"
+#include "esp_vfs_dev.h"
 #include "driver/mcpwm_prelude.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
 #include "driver/gptimer.h"
 #include "driver/pulse_cnt.h"
 #include "bdc_motor.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include <unistd.h>
+#include "esp_system.h"
+#include "esp_log.h"
+#include "esp_console.h"
+#include "driver/uart_vfs.h"
+#include "driver/uart.h"
+#include "linenoise/linenoise.h"
+#include "argtable3/argtable3.h"
+#include "esp_vfs_fat.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "soc/soc_caps.h"
 
 #include "pid_ctrl.h"
 /*******************************************************************************
@@ -36,6 +55,9 @@ enum
     OMNI_BDC_MOTOR_M2,
     OMNI_BDC_MOTOR_NUMBER
 };
+
+#define CONSOLE_UART_PORT_NUM           CONFIG_ESP_CONSOLE_UART_NUM
+
 
 /*******************************************************************************
  * Prototypes

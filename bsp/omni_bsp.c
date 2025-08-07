@@ -12,12 +12,18 @@
 #include "pid_ctrl.h"
 
 #include "omni_bsp.h"
-#include "tinysh.h"
 
 
 /*******************************************************************************
 * Definitions
 ******************************************************************************/
+#define PROMPT_STR "uet_omni"
+
+#define MOUNT_PATH "/data"
+#define HISTORY_PATH MOUNT_PATH "/history.txt"
+
+
+
 #define BDC_MCPWM_TIMER_RESOLUTION_HZ 10000000 // 10MHz, 1 tick = 0.1us
 #define BDC_MCPWM_FREQ_HZ             25000    // 25KHz PWM
 #define BDC_MCPWM_DUTY_TICK_MAX       (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
@@ -33,11 +39,11 @@
 
 #define BDC_ENCODER_M0_GPIO_A           GPIO_NUM_35
 #define BDC_ENCODER_M0_GPIO_B           GPIO_NUM_34
-#define BDC_PWM_M0_GPIO                 GPIO_NUM_21
+#define BDC_PWM_M0_GPIO                 GPIO_NUM_19
 
 #define W5500_SPI_CS_GPIO               GPIO_NUM_5
 
-#define CONSOLE_UART_PORT_NUM           CONFIG_EXAMPLE_UART_PORT_NUM
+#define CONSOLE_UART_PORT_NUM           CONFIG_ESP_CONSOLE_UART_NUM
 #define CONSOLE_TX_BUFFER_SIZE          0
 #define CONSOLE_RX_BUFFER_SIZE          1024
 
@@ -58,12 +64,21 @@
 /*******************************************************************************
 * Prototypes
 ******************************************************************************/
+static void initialize_filesystem(void);
+static void initialize_nvs(void);
+
+
 static void omni_io_init();
 static void omni_timer_init();
 static void omni_bdc_motor_init();
 static void omni_encoder_init();
 static void omni_pid_init();
-static void console_init();
+static void omni_console_init();
+
+
+
+extern void esp_console_reg();
+
 
 
 /*******************************************************************************
@@ -87,12 +102,43 @@ static pcnt_unit_handle_t s_encoder_m2 = NULL;
 
 static pid_ctrl_block_handle_t s_pid_m0 = NULL;
 
+static esp_console_repl_t *s_console_repl = NULL;
+
+
 
 
 
 /*******************************************************************************
 * Code
 ******************************************************************************/
+static void initialize_filesystem(void)
+{
+    static wl_handle_t wl_handle;
+    const esp_vfs_fat_mount_config_t mount_config = 
+    {
+            .max_files = 4,
+            .format_if_mount_failed = true
+    };
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE("SYS", "Failed to mount FATFS (%s)", esp_err_to_name(err));
+        return;
+    }
+}
+static void initialize_nvs(void)
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) 
+    {
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+}
+
+
+
 static void omni_io_init()
 {
     gpio_config_t w5500_cs_conf = {};
@@ -175,6 +221,9 @@ static void omni_bdc_motor_init()
     ESP_ERROR_CHECK(bdc_motor_new_mcpwm_device(&bdc_motor_m0_config,
                                                &bdc_motor_m0_mcpwm_config,
                                                &s_bdc_motor_m0));
+    
+    ESP_ERROR_CHECK(bdc_motor_enable(s_bdc_motor_m0));
+                                               
 
     ESP_LOGI("bdc_motor", "Done");
 
@@ -247,6 +296,29 @@ static void omni_pid_init()
     ESP_ERROR_CHECK(pid_new_control_block(&pid_m0_config, &s_pid_m0));
 }
 
+static void omni_console_init()
+{
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    repl_config.prompt = PROMPT_STR ">";
+    repl_config.max_cmdline_length = 1024;
+
+    initialize_nvs();
+
+    initialize_filesystem();
+    repl_config.history_save_path = HISTORY_PATH;
+    ESP_LOGI("SYS", "Command history enabled");
+
+    esp_console_register_help_command();
+    esp_console_reg();
+
+    esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
+
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
+}
+
+
 
 esp_err_t omni_bsp_init()
 {
@@ -254,6 +326,8 @@ esp_err_t omni_bsp_init()
     omni_timer_init();
     omni_bdc_motor_init();
     omni_encoder_init();
+    omni_pid_init();
+    omni_console_init();
     ESP_LOGI("DONE", "install pcnt channels");
 
     return ESP_OK;

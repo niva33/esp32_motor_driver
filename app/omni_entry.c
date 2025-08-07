@@ -37,7 +37,7 @@ static void omni_main_proc(void* _arg)
 
     // float new_speed = 0;
     // pid_compute(g_omni_app_default->drv.m_pid_ctrl_m0, error, &new_speed);
-    // bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, new_speed);
+    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, 125u);
     
     ESP_LOGI("siuuu", "This is PID callback %d",cur_pulse_count);
 
@@ -58,12 +58,12 @@ void omni_entry()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &pid_loop_timer));
     omni_init();
     ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, 10 * 1000));
+    gpio_set_level(GPIO_NUM_26, 1);
 
-    char c;
-    while(1)
-    {
-        uart_read_bytes(CONSOLE_UART_PORT_NUM, &c, 1U, 20 / portTICK_PERIOD_MS);
-    }
+    // while(1)
+    // {
+    //     uart_read_bytes(CONSOLE_UART_PORT_NUM, &c, 1U, 20 / portTICK_PERIOD_MS);
+    // }
 
 }
 

@@ -7,9 +7,10 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_SOURCE_DIR}/service
     ${CMAKE_SOURCE_DIR}/bsp
     ${CMAKE_SOURCE_DIR}/libs
-    # ${CMAKE_SOURCE_DIR}/libs
+    ${CMAKE_SOURCE_DIR}/testing
+    # ${CMAKE_SOURCE_DIR}/ultilis
 
-    )
+)
 
 
 
