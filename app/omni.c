@@ -19,6 +19,8 @@ static omni_t g_omni_app =
     .drv = 
     {
         .m_bdc_motor_m0 = NULL,
+        .m_bdc_motor_m1 = NULL,
+        .m_bdc_motor_m2 = NULL,
         .m_encoder_m0 = NULL,
         .m_pid_ctrl_m0 = NULL,
     }
@@ -37,8 +39,15 @@ static esp_err_t omni_drv_create(omni_t* _app)
     }
     // create bdc_control
     _app->drv.m_bdc_motor_m0 = omni_get_bdc_motor(0);
+    _app->drv.m_bdc_motor_m1 = omni_get_bdc_motor(1);
+    _app->drv.m_bdc_motor_m2 = omni_get_bdc_motor(2);
     _app->drv.m_encoder_m0 = omni_get_encoder(0);
+    _app->drv.m_encoder_m1 = omni_get_encoder(1);
+    _app->drv.m_encoder_m2 = omni_get_encoder(2);
     _app->drv.m_pid_ctrl_m0 = omni_get_pid(0);
+    _app->drv.m_pid_ctrl_m1 = omni_get_pid(1);
+    _app->drv.m_pid_ctrl_m2 = omni_get_pid(2);
+
     return 0;
 }
 

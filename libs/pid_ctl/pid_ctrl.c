@@ -148,3 +148,13 @@ esp_err_t pid_reset_ctrl_block(pid_ctrl_block_handle_t pid)
     pid->last_output = 0;
     return ESP_OK;
 }
+
+esp_err_t pid_get_integral_error(pid_ctrl_block_handle_t pid, float* _result)
+{
+    ESP_RETURN_ON_FALSE(pid, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *_result = pid->previous_err1;
+    // *_result = (int)pid->previous_err2;
+    return ESP_OK;
+
+}
+

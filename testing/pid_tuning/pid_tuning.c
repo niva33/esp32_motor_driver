@@ -2,6 +2,9 @@
 #include "omni_bsp.h"
 #include "esp_timer.h"
 #include "pid_tuning.h"
+#include "esp_adc/adc_oneshot.h"
+
+
 
 
 /*******************************************************************************
@@ -28,7 +31,6 @@ float g_fKp = 0;
 float g_fKi = 0;
 float g_fKd = 0;
 
-
 /** Arguments used by 'join' function */
 static struct {
     struct arg_int *kp;
@@ -36,6 +38,12 @@ static struct {
     struct arg_int *kd;
     struct arg_end *end;
 } s_pid_args;
+
+uint32_t u32g_actual_vel;
+uint32_t u32g_setpoint_vel;
+uint8_t u8g_log = 0;
+
+adc_oneshot_unit_handle_t adc1_handle;
 
 
 
@@ -49,6 +57,8 @@ static void pid_tuning_proc(void* _arg)
     float error;
     float new_speed;
     int real_pulse;
+    int i32cur_sense;
+    float i32sum_of_error;
     static uint8_t count = 0;
     static uint8_t sp[] = {10, 25, 5, 20};
     static uint8_t index = 0;
@@ -58,46 +68,71 @@ static void pid_tuning_proc(void* _arg)
     //change setpoint after 1s (100 tick, each tick 10ms)
     //stop at the last setpoint
     count++;
-    if(count > 100)
+    if(count > 200)
     {
         count = 0;
         index = index + 1;
     }
-    if(index > 3)
+    if(index > 2)
     {
-        esp_timer_stop(s_pid_loop_timer);
-        bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, 0u);
-        pid_reset_ctrl_block(g_omni_app_default->drv.m_pid_ctrl_m0);
-        pcnt_unit_clear_count(g_omni_app_default->drv.m_encoder_m0);
-        error = 0;
-        real_pulse = 0;
+        // esp_timer_stop(s_pid_loop_timer);
+        // bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, 0u);
+        // pid_reset_ctrl_block(g_omni_app_default->drv.m_pid_ctrl_m0);
+        // pcnt_unit_clear_count(g_omni_app_default->drv.m_encoder_m0);
+        // error = 0;
+        // real_pulse = 0;
+        // index = 0;
+        // new_speed = 0;
+        // last_pulse_count = 0;
+        // esp_restart();
+        // return;
         index = 0;
-        new_speed = 0;
-        last_pulse_count = 0;
-        esp_restart();
-        return;
     }
 
     //start pid compute
     int cur_pulse_count = 0;
     ESP_ERROR_CHECK(pcnt_unit_get_count(g_omni_app_default->drv.m_encoder_m0, &cur_pulse_count));
     real_pulse = cur_pulse_count - last_pulse_count;
+
+    if(real_pulse < -10000)
+    {
+        real_pulse = real_pulse + 30000;
+    }
+
     last_pulse_count = cur_pulse_count;
 
     error = (float)sp[index] - real_pulse;
 
     new_speed = 0;
     pid_compute(g_omni_app_default->drv.m_pid_ctrl_m0, error, &new_speed);
-    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, new_speed);
-    gpio_set_level(GPIO_NUM_26, 1);
+    pid_get_integral_error(g_omni_app_default->drv.m_pid_ctrl_m0, &i32sum_of_error);
+
+    if(new_speed < 0)
+    {
+        bdc_motor_brake(g_omni_app_default->drv.m_bdc_motor_m0);
+    }
+    else
+    {
+        bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, new_speed);
+        bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m1, new_speed);
+        bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m2, new_speed);
+    }
+
+    ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &i32cur_sense));
+
+    // gpio_set_level(GPIO_NUM_26, 1);
+    u32g_actual_vel = real_pulse;
+    u32g_setpoint_vel = sp[index];
+    u8g_log = 1;
+
     
     // ESP_LOGI("","");
 
     // printf("%d ", 20);
-    printf("%d ", real_pulse);
-    printf("%d\n", sp[index]);
+    // printf("%d ", real_pulse);
+    // printf("%d\n", sp[index]);
     // printf("%d ", cur_pulse_count);
-
+    printf("$%d,%d,%f,%f;\n",real_pulse, sp[index], new_speed, i32sum_of_error);
     // printf("%d\n", 30);
 
 }
@@ -117,9 +152,9 @@ static int pid_tuning_proc_test_fn(int argc, char** argv)
 
     pid_ctrl_parameter_t new_params = 
     {
-        .kp = g_fKp,
-        .ki = g_fKi,
-        .kd = g_fKd,
+        .kp = 25,
+        .ki = 10,
+        .kd = 0,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output   = 399,
         .min_output   = 0,
@@ -135,8 +170,6 @@ static int pid_tuning_proc_test_fn(int argc, char** argv)
 
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(s_pid_loop_timer, 10 * 1000));
-
-
 
 
     return 0;
@@ -177,8 +210,41 @@ void pid_testing()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &s_pid_loop_timer));
     omni_init();
 
-    // while(1)
-    // {
+    adc_oneshot_unit_init_cfg_t init_config1 = 
+    {
+        .unit_id = ADC_UNIT_1,
+    };
 
-    // }
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    adc_oneshot_chan_cfg_t config = 
+    {
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_0, &config));
+
+
+
+
+
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m0);
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
+
+
+
+    while (1)
+    {
+        if(u8g_log)
+        {
+            // printf("$%ld,%ld;\n",u32g_actual_vel, u32g_setpoint_vel);
+            u8g_log = 0;
+        }
+        // // Reset watchdog cho task hiện tại
+        // esp_task_wdt_reset();
+    }
+    
+
+    // s
 }

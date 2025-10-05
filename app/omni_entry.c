@@ -6,7 +6,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define BDC_PID_EXPECT_SPEED (400u)
+#define BDC_PID_EXPECT_SPEED (30u)
 
 /*******************************************************************************
  * Prototypes
@@ -16,6 +16,11 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+char g_data_buf[1024];
+uint8_t g_sp_0 = 0;
+uint8_t g_sp_1 = 0;
+uint8_t g_sp_2 = 0;
+
 
 
 /*******************************************************************************
@@ -26,20 +31,53 @@ static void omni_main_proc(void* _arg)
 {
     (void)_arg;
 
-    static int32_t last_pulse_count = 0;
-    int cur_pulse_count = 0;
+    static int32_t last_pulse_count_m0 = 0;
+    static int32_t last_pulse_count_m1 = 0;
+    static int32_t last_pulse_count_m2 = 0;
+    int cur_pulse_count_0 = 0;
+    int cur_pulse_count_1 = 0;
+    int cur_pulse_count_2 = 0;
+    int32_t real_pulse_m0 = 0;
+    int32_t real_pulse_m1 = 0;
+    int32_t real_pulse_m2 = 0;
+
+
     omni_t* temp = g_omni_app_default;
-    ESP_ERROR_CHECK(pcnt_unit_get_count(g_omni_app_default->drv.m_encoder_m0, &cur_pulse_count));
-    // int32_t real_pulse = cur_pulse_count - last_pulse_count;
-    // last_pulse_count = cur_pulse_count;
+    ESP_ERROR_CHECK(pcnt_unit_get_count(g_omni_app_default->drv.m_encoder_m0, &cur_pulse_count_0));
+    ESP_ERROR_CHECK(pcnt_unit_get_count(g_omni_app_default->drv.m_encoder_m1, &cur_pulse_count_1));
+    ESP_ERROR_CHECK(pcnt_unit_get_count(g_omni_app_default->drv.m_encoder_m2, &cur_pulse_count_2));
 
-    // float error = (float)BDC_PID_EXPECT_SPEED - real_pulse;
+    //m0
+    real_pulse_m0 = cur_pulse_count_0 - last_pulse_count_m0;
+    last_pulse_count_m0 = cur_pulse_count_0;
+    float error_m0 = (float)g_sp_0 - real_pulse_m0;
+    float new_speed_m0 = 0;
+    pid_compute(g_omni_app_default->drv.m_pid_ctrl_m0, error_m0, &new_speed_m0);
+    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, new_speed_m0);
 
-    // float new_speed = 0;
-    // pid_compute(g_omni_app_default->drv.m_pid_ctrl_m0, error, &new_speed);
-    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, 125u);
+    //m1
+    real_pulse_m1 = cur_pulse_count_1 - last_pulse_count_m1;
+    last_pulse_count_m1 = cur_pulse_count_1;
+    float error_m1 = (float)g_sp_1 - real_pulse_m1;
+    float new_speed_m1 = 0;
+    pid_compute(g_omni_app_default->drv.m_pid_ctrl_m1, error_m1, &new_speed_m1);
+    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m1, new_speed_m1);
+
+    //m2
+    real_pulse_m2 = cur_pulse_count_2 - last_pulse_count_m2;
+    last_pulse_count_m2 = cur_pulse_count_2;
+    float error_m2 = (float)g_sp_2 - real_pulse_m2;
+    float new_speed_m2 = 0;
+    pid_compute(g_omni_app_default->drv.m_pid_ctrl_m2, error_m2, &new_speed_m2);
+    bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m2, new_speed_m2);
+
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m0);
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
+    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
+
     
-    ESP_LOGI("siuuu", "This is PID callback %d",cur_pulse_count);
+    ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, real_pulse_m1 %d, g_sp_1 %d, real_pulse_m2 %d, g_sp_2 %d",
+                    real_pulse_m0, g_sp_0, real_pulse_m1, g_sp_1, real_pulse_m2, g_sp_2);
 
 }
 
@@ -58,12 +96,67 @@ void omni_entry()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &pid_loop_timer));
     omni_init();
     ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, 10 * 1000));
-    gpio_set_level(GPIO_NUM_26, 1);
+    // bdc_motor_enable(g_omni_app_default->drv.m_bdc_motor_m0);
+    // bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, 300u);
+    // bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m0);
 
-    // while(1)
-    // {
-    //     uart_read_bytes(CONSOLE_UART_PORT_NUM, &c, 1U, 20 / portTICK_PERIOD_MS);
-    // }
+
+
+    // gpio_set_level(GPIO_NUM_26, 1);
+
+    while(1)
+    {
+        uint8_t sn_sr = getSn_SR(W5500_TCP_SOCKET_NUM);
+        if(sn_sr == SOCK_CLOSED)
+        {
+            socket(W5500_TCP_SOCKET_NUM, Sn_MR_TCP, W5500_TCP_PORT, 0x00);
+        }
+        else if (sn_sr == SOCK_INIT)
+        {
+            listen(W5500_TCP_SOCKET_NUM);
+            uint8_t initial_sock_ir = getSn_IR(W5500_TCP_SOCKET_NUM);
+            setSn_IR(W5500_TCP_SOCKET_NUM, initial_sock_ir); // Xóa mọi cờ cũ để bắt đầu sạch
+            ESP_LOGW("W5500", "Giá trị Sn_IR ban đầu (sau khi listen): 0x%02X", getSn_IR(W5500_TCP_SOCKET_NUM));
+            
+            // Cấu hình ngắt cho các sự kiện mong muốn
+            uint8_t socket_irq_mask = Sn_IR_RECV ;
+            setSn_IMR(W5500_TCP_SOCKET_NUM, socket_irq_mask);
+            setSIMR(1);
+        }
+        else if(sn_sr == SOCK_ESTABLISHED)
+        {
+            uint8_t sn_cr = getSn_CR(W5500_TCP_SOCKET_NUM);
+            uint8_t sn_ir = getSn_IR(W5500_TCP_SOCKET_NUM);
+            uint8_t sn_imr = getSn_IMR(W5500_TCP_SOCKET_NUM);
+            uint16_t intlevel = getINTLEVEL();
+
+            int int_status = gpio_get_level(W5500_INT_GPIO);
+            if(int_status == 0)
+            {
+                setSn_IR(W5500_TCP_SOCKET_NUM, 0); // Xóa mọi cờ cũ để bắt đầu sạch
+                uint16_t recv_size = getSn_RX_RSR(W5500_TCP_SOCKET_NUM);
+                if (recv_size > 0) 
+                {
+                    int32_t ret = recv(W5500_TCP_SOCKET_NUM, (uint8_t*)g_data_buf, recv_size);
+                    if(ret  > 0)
+                    {
+                        g_sp_0 = (g_data_buf[0] - '0') * 10 + (g_data_buf[1] - '0');
+                        g_sp_1 = (g_data_buf[2] - '0') * 10 + (g_data_buf[3] - '0');
+                        g_sp_2 = (g_data_buf[4] - '0') * 10 + (g_data_buf[5] - '0');
+                        ESP_LOGI("TAG", "Received %d bytes: '%s'", ret, (char*)g_data_buf);
+                        char* response_msg = "\nRecv setpoint";
+                        send(W5500_TCP_SOCKET_NUM, (uint8_t*)response_msg, strlen(response_msg));
+                    }
+                }
+            }   
+        }
+        else if(sn_sr == SOCK_CLOSE_WAIT)
+        {
+            setSn_CR(W5500_TCP_SOCKET_NUM, Sn_CR_DISCON);
+            // check = 0;
+        }    
+
+    }
 
 }
 

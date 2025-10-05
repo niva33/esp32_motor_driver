@@ -33,11 +33,12 @@ extern void pid_testing();
 
 void app_main(void)
 {
-    // omni_entry();
-    pid_testing();
+    omni_entry();
+    // pid_testing();
 
 
-    ESP_LOGI(TAG, "Successfully");
+    
+
 
     
 }

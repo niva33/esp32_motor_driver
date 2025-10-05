@@ -109,23 +109,13 @@ esp_err_t bdc_motor_brake(bdc_motor_handle_t motor);
  */
 esp_err_t bdc_motor_del(bdc_motor_handle_t motor);
 
-
-/**
- * @brief Shift Register Configuration
- */
-typedef struct {
-    uint32_t latch_gpio_num; //STCP
-    uint32_t clock_gpio_num; //SHCP
-    uint8_t data_gpio_num; //DS
-} shift_reg_config_t;
-
 /**
  * @brief BDC Motor Configuration
  */
 typedef struct {
     uint32_t pwma_gpio_num; /*!< BDC Motor PWM A gpio number */
+    uint32_t pwmb_gpio_num; /*!< BDC Motor PWM B gpio number */
     uint32_t pwm_freq_hz;   /*!< PWM frequency, in Hz */
-    shift_reg_config_t shift_reg;
 } bdc_motor_config_t;
 
 /**
@@ -135,9 +125,6 @@ typedef struct {
     int group_id;           /*!< MCPWM group number */
     uint32_t resolution_hz; /*!< MCPWM timer resolution */
 } bdc_motor_mcpwm_config_t;
-
-
-
 
 /**
  * @brief Create BDC Motor based on MCPWM peripheral

@@ -9,12 +9,11 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_SOURCE_DIR}/libs
     ${CMAKE_SOURCE_DIR}/testing
     # ${CMAKE_SOURCE_DIR}/ultilis
-
 )
 
 
 
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-idf_build_set_property(MINIMAL_BUILD ON)
+# idf_build_set_property(MINIMAL_BUILD ON)
 project(rotary_encoder)

@@ -9,10 +9,8 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "driver/mcpwm_prelude.h"
-#include "driver/gpio.h"
 #include "bdc_motor.h"
 #include "bdc_motor_interface.h"
-#include "bdc_motor_defs.h"
 
 /*******************************************************************************
  * Definitions
@@ -22,7 +20,6 @@ static const char *TAG = "bdc_motor_mcpwm";
 
 typedef struct {
     bdc_motor_t base;
-    bdc_motor_config_t config;
     mcpwm_timer_handle_t timer;
     mcpwm_oper_handle_t operator;
     mcpwm_cmpr_handle_t cmpa;
@@ -35,8 +32,6 @@ typedef struct {
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-static esp_err_t shift_out(uint32_t _data_pin, uint32_t _clock_pin, uint8_t _data);
-
 static esp_err_t bdc_motor_mcpwm_set_speed(bdc_motor_t *motor, uint32_t speed);
 static esp_err_t bdc_motor_mcpwm_enable(bdc_motor_t *motor);
 static esp_err_t bdc_motor_mcpwm_disable(bdc_motor_t *motor);
@@ -56,19 +51,11 @@ static esp_err_t bdc_motor_mcpwm_del(bdc_motor_t *motor);
  * Code
  ******************************************************************************/
 
-static esp_err_t shift_out(uint32_t _data_pin, uint32_t _clock_pin, uint8_t _data)
-{
-    gpio_set_level(_clock_pin, 0);
-    // for()
-    gpio_set_level(_clock_pin, 1);
-
-    return ESP_OK;
-}
-
 static esp_err_t bdc_motor_mcpwm_set_speed(bdc_motor_t *motor, uint32_t speed)
 {
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
     ESP_RETURN_ON_ERROR(mcpwm_comparator_set_compare_value(mcpwm_motor->cmpa, speed), TAG, "set compare value failed");
+    ESP_RETURN_ON_ERROR(mcpwm_comparator_set_compare_value(mcpwm_motor->cmpb, speed), TAG, "set compare value failed");
     return ESP_OK;
 }
 
@@ -85,49 +72,38 @@ static esp_err_t bdc_motor_mcpwm_disable(bdc_motor_t *motor)
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
     ESP_RETURN_ON_ERROR(mcpwm_timer_start_stop(mcpwm_motor->timer, MCPWM_TIMER_STOP_EMPTY), TAG, "stop timer failed");
     ESP_RETURN_ON_ERROR(mcpwm_timer_disable(mcpwm_motor->timer), TAG, "disable timer failed");
-    
-    gpio_set_level((mcpwm_motor->config).shift_reg.latch_gpio_num, 0);
-    shift_out(mcpwm_motor->config.shift_reg.data_gpio_num, mcpwm_motor->config.shift_reg.clock_gpio_num, (uint8_t)ST);
-    gpio_set_level(mcpwm_motor->config.shift_reg.latch_gpio_num, 1);
-    
     return ESP_OK;
 }
 
 static esp_err_t bdc_motor_mcpwm_forward(bdc_motor_t *motor)
 {
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
-    
-    gpio_set_level((mcpwm_motor->config).shift_reg.latch_gpio_num, 0);
-    shift_out(mcpwm_motor->config.shift_reg.data_gpio_num, mcpwm_motor->config.shift_reg.clock_gpio_num, (uint8_t)M1_FW);
-    gpio_set_level(mcpwm_motor->config.shift_reg.latch_gpio_num, 1);
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->gena, -1, true), TAG, "disable force level for gena failed");
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->genb, 0, true), TAG, "set force level for genb failed");
     return ESP_OK;
 }
 
 static esp_err_t bdc_motor_mcpwm_reverse(bdc_motor_t *motor)
 {
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
-    gpio_set_level((mcpwm_motor->config).shift_reg.latch_gpio_num, 0);
-    shift_out(mcpwm_motor->config.shift_reg.data_gpio_num, mcpwm_motor->config.shift_reg.clock_gpio_num, (uint8_t)M1_BW);
-    gpio_set_level(mcpwm_motor->config.shift_reg.latch_gpio_num, 1);
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->genb, -1, true), TAG, "disable force level for genb failed");
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->gena, 0, true), TAG, "set force level for gena failed");
     return ESP_OK;
 }
 
 static esp_err_t bdc_motor_mcpwm_coast(bdc_motor_t *motor)
 {
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
-
-    gpio_set_level((mcpwm_motor->config).shift_reg.latch_gpio_num, 0);
-    shift_out(mcpwm_motor->config.shift_reg.data_gpio_num, mcpwm_motor->config.shift_reg.clock_gpio_num, (uint8_t)ST);
-    gpio_set_level(mcpwm_motor->config.shift_reg.latch_gpio_num, 1);
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->gena, 0, true), TAG, "set force level for gena failed");
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->genb, 0, true), TAG, "set force level for genb failed");
     return ESP_OK;
 }
 
 static esp_err_t bdc_motor_mcpwm_brake(bdc_motor_t *motor)
 {
     bdc_motor_mcpwm_obj *mcpwm_motor = __containerof(motor, bdc_motor_mcpwm_obj, base);
-    gpio_set_level((mcpwm_motor->config).shift_reg.latch_gpio_num, 0);
-    shift_out(mcpwm_motor->config.shift_reg.data_gpio_num, mcpwm_motor->config.shift_reg.clock_gpio_num, (uint8_t)ST);
-    gpio_set_level(mcpwm_motor->config.shift_reg.latch_gpio_num, 1);
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->gena, 1, true), TAG, "set force level for gena failed");
+    ESP_RETURN_ON_ERROR(mcpwm_generator_set_force_level(mcpwm_motor->genb, 1, true), TAG, "set force level for genb failed");
     return ESP_OK;
 }
 
@@ -152,7 +128,6 @@ esp_err_t bdc_motor_new_mcpwm_device(const bdc_motor_config_t *motor_config, con
     mcpwm_motor = calloc(1, sizeof(bdc_motor_mcpwm_obj));
     ESP_GOTO_ON_FALSE(mcpwm_motor, ESP_ERR_NO_MEM, err, TAG, "no mem for rmt motor");
 
-
     // mcpwm timer
     mcpwm_timer_config_t timer_config = {
         .group_id = mcpwm_config->group_id,
@@ -174,27 +149,31 @@ esp_err_t bdc_motor_new_mcpwm_device(const bdc_motor_config_t *motor_config, con
         .flags.update_cmp_on_tez = true,
     };
     ESP_GOTO_ON_ERROR(mcpwm_new_comparator(mcpwm_motor->operator, &comparator_config, &mcpwm_motor->cmpa), err, TAG, "create comparator failed");
+    ESP_GOTO_ON_ERROR(mcpwm_new_comparator(mcpwm_motor->operator, &comparator_config, &mcpwm_motor->cmpb), err, TAG, "create comparator failed");
 
     // set the initial compare value for both comparators
     mcpwm_comparator_set_compare_value(mcpwm_motor->cmpa, 0);
+    mcpwm_comparator_set_compare_value(mcpwm_motor->cmpb, 0);
 
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = motor_config->pwma_gpio_num,
     };
     ESP_GOTO_ON_ERROR(mcpwm_new_generator(mcpwm_motor->operator, &generator_config, &mcpwm_motor->gena), err, TAG, "create generator failed");
-    
+    generator_config.gen_gpio_num = motor_config->pwmb_gpio_num;
+    ESP_GOTO_ON_ERROR(mcpwm_new_generator(mcpwm_motor->operator, &generator_config, &mcpwm_motor->genb), err, TAG, "create generator failed");
 
     mcpwm_generator_set_actions_on_timer_event(mcpwm_motor->gena,
-                                               MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, 
-                                                                            MCPWM_TIMER_EVENT_EMPTY, 
-                                                                            MCPWM_GEN_ACTION_HIGH),
-                                               MCPWM_GEN_TIMER_EVENT_ACTION_END());
+            MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH),
+            MCPWM_GEN_TIMER_EVENT_ACTION_END());
     mcpwm_generator_set_actions_on_compare_event(mcpwm_motor->gena,
-                                                 MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, 
-                                                                                mcpwm_motor->cmpa, 
-                                                                                MCPWM_GEN_ACTION_LOW),
-                                                 MCPWM_GEN_COMPARE_EVENT_ACTION_END());
-    
+            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwm_motor->cmpa, MCPWM_GEN_ACTION_LOW),
+            MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+    mcpwm_generator_set_actions_on_timer_event(mcpwm_motor->genb,
+            MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH),
+            MCPWM_GEN_TIMER_EVENT_ACTION_END());
+    mcpwm_generator_set_actions_on_compare_event(mcpwm_motor->genb,
+            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwm_motor->cmpb, MCPWM_GEN_ACTION_LOW),
+            MCPWM_GEN_COMPARE_EVENT_ACTION_END());
 
     mcpwm_motor->base.enable = bdc_motor_mcpwm_enable;
     mcpwm_motor->base.disable = bdc_motor_mcpwm_disable;
