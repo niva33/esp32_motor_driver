@@ -37,7 +37,7 @@ extern "C"{
 #include "soc/soc_caps.h"
 #include "esp_task_wdt.h"
 #include "socket_.h"
-
+#include "esp_mac.h"
 
 #include "pid_ctrl.h"
 /*******************************************************************************
@@ -58,6 +58,8 @@ enum
     OMNI_BDC_MOTOR_M2,
     OMNI_BDC_MOTOR_NUMBER
 };
+
+#define NUM_MODULES                      (10u)
 
 #define CONSOLE_UART_PORT_NUM           CONFIG_ESP_CONSOLE_UART_NUM
 
@@ -85,8 +87,8 @@ enum
 //BDC_M2
 #define BDC_M2_MCPWM_GPIO_A             GPIO_NUM_38
 #define BDC_M2_MCPWM_GPIO_B             GPIO_NUM_2
-#define BDC_M2_ENCODER_GPIO_A           GPIO_NUM_47
-#define BDC_M2_ENCODER_GPIO_B           GPIO_NUM_48
+#define BDC_M2_ENCODER_GPIO_A           GPIO_NUM_48
+#define BDC_M2_ENCODER_GPIO_B           GPIO_NUM_47
 #define BDC_M2_CUR_SENSE                GPIO_NUM_1
 
 //W5500
@@ -98,14 +100,21 @@ enum
 #define W5500_RST_GPIO                  GPIO_NUM_21
 #define W5500_SPI_HOST                  SPI2_HOST
 #define W5500_TCP_SOCKET_NUM            (0u)
-#define W5500_TCP_PORT                  (5000u)
-#define W5500_SPI_CLK_FREQ              (50*1000*1000)
+#define W5500_TCP_PORT                  (5010u)
+#define W5500_SPI_CLK_FREQ              (2*1000*1000)
 
 
 
 #define CONSOLE_UART_PORT_NUM           CONFIG_ESP_CONSOLE_UART_NUM
 #define CONSOLE_TX_BUFFER_SIZE          0
 #define CONSOLE_RX_BUFFER_SIZE          1024
+
+
+typedef struct omni_module_eth_info_t
+{
+    uint8_t mac[6]; ///< Source Mac Address
+    uint8_t ip[4]; ///< Source IP Address
+}omni_module_eth_info_t;
 
 
 /*******************************************************************************

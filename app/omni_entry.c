@@ -1,6 +1,8 @@
 #include "omni.h"
 #include "omni_bsp.h"
 #include "esp_timer.h"
+#include "esp_sleep.h"
+
 
 
 /*******************************************************************************
@@ -17,9 +19,12 @@
  * Variables
  ******************************************************************************/
 char g_data_buf[1024];
-uint8_t g_sp_0 = 0;
-uint8_t g_sp_1 = 0;
-uint8_t g_sp_2 = 0;
+int32_t g_sp_0 = 0;
+int32_t g_sp_1 = 0;
+int32_t g_sp_2 = 0;
+uint8_t g_dir_0 = 0;
+uint8_t g_dir_1 = 0;
+uint8_t g_dir_2 = 0;
 
 
 
@@ -53,6 +58,19 @@ static void omni_main_proc(void* _arg)
     float error_m0 = (float)g_sp_0 - real_pulse_m0;
     float new_speed_m0 = 0;
     pid_compute(g_omni_app_default->drv.m_pid_ctrl_m0, error_m0, &new_speed_m0);
+    if(g_dir_0 == 1 && new_speed_m0 <=0)
+    {
+        new_speed_m0 = 0;
+    }
+    else if(g_dir_0 == 0 && new_speed_m0 >= 0)
+    {
+        new_speed_m0 = 0;
+    }
+
+    if(new_speed_m0 < 0)
+    {
+        new_speed_m0 = - new_speed_m0;
+    }
     bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m0, new_speed_m0);
 
     //m1
@@ -61,6 +79,19 @@ static void omni_main_proc(void* _arg)
     float error_m1 = (float)g_sp_1 - real_pulse_m1;
     float new_speed_m1 = 0;
     pid_compute(g_omni_app_default->drv.m_pid_ctrl_m1, error_m1, &new_speed_m1);
+    if(g_dir_1 == 1 && new_speed_m1 <=0)
+    {
+        new_speed_m1 = 0;
+    }
+    else if(g_dir_1 == 0 && new_speed_m1 >= 0)
+    {
+        new_speed_m1 = 0;
+    }
+
+    if(new_speed_m1 < 0)
+    {
+        new_speed_m1 = - new_speed_m1;
+    }
     bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m1, new_speed_m1);
 
     //m2
@@ -69,16 +100,61 @@ static void omni_main_proc(void* _arg)
     float error_m2 = (float)g_sp_2 - real_pulse_m2;
     float new_speed_m2 = 0;
     pid_compute(g_omni_app_default->drv.m_pid_ctrl_m2, error_m2, &new_speed_m2);
+    if(g_dir_2 == 1 && new_speed_m2 <=0)
+    {
+        new_speed_m2 = 0;
+    }
+    else if(g_dir_2 == 0 && new_speed_m2 >= 0)
+    {
+        new_speed_m2 = 0;
+    }
+
+    if(new_speed_m2 < 0)
+    {
+        new_speed_m2 = - new_speed_m2;
+    }
     bdc_motor_set_speed(g_omni_app_default->drv.m_bdc_motor_m2, new_speed_m2);
 
-    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m0);
-    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
-    bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
+    if(g_dir_0 == 1)
+    {
+        bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m0);
+    }
+    else
+    {
+        bdc_motor_reverse(g_omni_app_default->drv.m_bdc_motor_m0);
+    }
+
+    if(g_dir_1 == 1)
+    {
+        bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
+    }
+    else
+    {
+        bdc_motor_reverse(g_omni_app_default->drv.m_bdc_motor_m1);
+    }
+
+    if(g_dir_2 == 1)
+    {
+        bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
+    }
+    else
+    {
+        bdc_motor_reverse(g_omni_app_default->drv.m_bdc_motor_m2);
+    }
+
+    
+    // bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
+    // bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
 
     
     ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, real_pulse_m1 %d, g_sp_1 %d, real_pulse_m2 %d, g_sp_2 %d",
-                    real_pulse_m0, g_sp_0, real_pulse_m1, g_sp_1, real_pulse_m2, g_sp_2);
+                    real_pulse_m0, g_sp_0, real_pulse_m1, g_sp_1, real_pulse_m2, g_sp_2) ;
 
+    // ESP_LOGI("PID", "real_pulse_m0 %d, real_pulse_m1 %d, real_pulse_m2 %d, new_speed_m0 %f, new_speed_m1 %f, new_speed_m2 %f",
+    //                 real_pulse_m0, real_pulse_m1, real_pulse_m2, new_speed_m0, new_speed_m1, new_speed_m2) ;
+
+        // ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, new_speed_m0 %f,g_dir_0 %d",
+        //              real_pulse_m0, g_sp_0, new_speed_m0, g_dir_0);
 }
 
 void omni_entry()
@@ -140,9 +216,24 @@ void omni_entry()
                     int32_t ret = recv(W5500_TCP_SOCKET_NUM, (uint8_t*)g_data_buf, recv_size);
                     if(ret  > 0)
                     {
-                        g_sp_0 = (g_data_buf[0] - '0') * 10 + (g_data_buf[1] - '0');
-                        g_sp_1 = (g_data_buf[2] - '0') * 10 + (g_data_buf[3] - '0');
-                        g_sp_2 = (g_data_buf[4] - '0') * 10 + (g_data_buf[5] - '0');
+                        g_dir_0 = g_data_buf[0] - '0';
+                        g_dir_1 = g_data_buf[1] - '0';
+                        g_dir_2 = g_data_buf[2] - '0';
+                        g_sp_0 = (g_data_buf[3] - '0') * 10 + (g_data_buf[4] - '0');
+                        g_sp_1 = (g_data_buf[5] - '0') * 10 + (g_data_buf[6] - '0');
+                        g_sp_2 = (g_data_buf[7] - '0') * 10 + (g_data_buf[8] - '0');
+                        if(g_dir_0 == 0)
+                        {
+                            g_sp_0 = - g_sp_0;
+                        }
+                        if(g_dir_1 == 0)
+                        {
+                            g_sp_1 = - g_sp_1;
+                        }
+                        if(g_dir_2 == 0)
+                        {
+                            g_sp_2 = - g_sp_2;
+                        }
                         ESP_LOGI("TAG", "Received %d bytes: '%s'", ret, (char*)g_data_buf);
                         char* response_msg = "\nRecv setpoint";
                         send(W5500_TCP_SOCKET_NUM, (uint8_t*)response_msg, strlen(response_msg));
@@ -153,6 +244,9 @@ void omni_entry()
         else if(sn_sr == SOCK_CLOSE_WAIT)
         {
             setSn_CR(W5500_TCP_SOCKET_NUM, Sn_CR_DISCON);
+            g_sp_0 = 0;
+            g_sp_1 = 0;
+            g_sp_2 = 0;
             // check = 0;
         }    
 

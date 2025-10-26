@@ -100,14 +100,72 @@ static spi_device_handle_t s_spi_handle = NULL;
 
 static wiz_NetInfo s_w5500_server_info = 
 {
-    .mac = {0x00, 0x08, 0xDC, 0x12, 0x34, 0x56},
-    .ip = {192, 168, 1, 101},
+    .mac = {0x03, 0x03, 0xDC, 0x12, 0x04, 0x56},
+    .ip = {192, 168, 1, 103},
     .sn = {255, 255, 255, 0},
     .gw = {192, 168, 1, 1},
     .dns = {0, 0, 0, 0},
     .dhcp = NETINFO_STATIC
 };
 
+static omni_module_eth_info_t s_omni_module_eth_info[NUM_MODULES] = 
+{
+    //module 0
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x10, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 100}
+    },
+    //module 1
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x11, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 101}
+    },
+    //module 2
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 110}
+    },
+    //module 3
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x13, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 102}
+    },
+    //module 4
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x14, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 103}
+    },
+    //module 5
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x15, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 104}
+    },
+    //module 6
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x16, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 105}
+    },
+    //module 7
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x19, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 106}
+    },
+    //module 8
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x21, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 107}
+    },
+    //module 9
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x32, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 109}
+    },
+    //module 10
+    {
+        .mac = {0x30, 0xED, 0xA0, 0x56, 0xD2, 0xF8},
+        .ip = {192, 168, 1, 99}
+    }
+};
 
 
 
@@ -329,8 +387,8 @@ static void omni_encoder_init()
 
     pcnt_chan_config_t chan_a_config_m2 = 
     {
-        .edge_gpio_num = BDC_M0_ENCODER_GPIO_A,
-        .level_gpio_num = BDC_M0_ENCODER_GPIO_B,
+        .edge_gpio_num = BDC_M2_ENCODER_GPIO_A,
+        .level_gpio_num = BDC_M2_ENCODER_GPIO_B,
     };
     pcnt_channel_handle_t pcnt_chan_a_m2 = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(s_encoder_m2, &chan_a_config_m2, &pcnt_chan_a_m2));
@@ -366,7 +424,7 @@ static void omni_pid_init()
         .kd = 0,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
-        .min_output   = 0,
+        .min_output   = - (BDC_MCPWM_DUTY_TICK_MAX - 1),
         .max_integral = 1000,
         .min_integral = -1000,
     };
@@ -386,7 +444,7 @@ static void omni_pid_init()
         .kd = 0,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
-        .min_output   = 0,
+        .min_output   = - (BDC_MCPWM_DUTY_TICK_MAX - 1),
         .max_integral = 1000,
         .min_integral = -1000,
     };
@@ -404,7 +462,7 @@ static void omni_pid_init()
         .kd = 0,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
-        .min_output   = 0,
+        .min_output   = - (BDC_MCPWM_DUTY_TICK_MAX - 1),
         .max_integral = 1000,
         .min_integral = -1000,
     };
@@ -452,7 +510,7 @@ static void omni_w5500_init()
 
     //force reset w5500
     gpio_set_level(W5500_RST_GPIO, 0);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    vTaskDelay(pdMS_TO_TICKS(20));
     gpio_set_level(W5500_RST_GPIO, 1);
     ESP_LOGI("W5500", "Reset W5500 ...");
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -462,7 +520,7 @@ static void omni_w5500_init()
         .mode = GPIO_MODE_OUTPUT,
         .intr_type = GPIO_INTR_DISABLE};
     gpio_config(&cs_gpio_config);
-    gpio_set_level(W5500_SPI_CS_GPIO, 1);
+    gpio_set_level(W5500_SPI_CS_GPIO, 0);
 
     spi_bus_config_t bus_cfg = 
     {
@@ -485,7 +543,6 @@ static void omni_w5500_init()
     //register callback for w5500
     reg_wizchip_cs_cbfunc(omni_w5500_cs_select, omni_w5500_cs_deselect);
     reg_wizchip_spi_cbfunc(omni_w5500_spi_readbyte, omni_w5500_spi_writebyte);
-
     wizchip_init(NULL, NULL);
     
     //Set interrupt mask W5500 - INT pin go low when interrupt issued
@@ -497,7 +554,14 @@ static void omni_w5500_init()
     uint8_t version = getVERSIONR();
     if(version != 0x04)
     {
-        ESP_LOGE("W5500", "SPI communication failed. Loop forever.");
+        ESP_LOGE("W5500", "SPI communicnjnnunnuununnuuunnnnnnnnation failed. Loop forever. Version %d", version);
+        for(int k = 0; k <10; k++)
+        {
+            version = getSIMR();
+            ESP_LOGE("W5500", "SPI communication faimkmkmkmled. Loop forever. Version %d", version);
+            vTaskDelay(pdMS_TO_TICKS(20));
+
+        }
         while(1);
     }
     else
@@ -505,21 +569,58 @@ static void omni_w5500_init()
         ESP_LOGI("W5500", "W5500 Version: 0x%02X", version);
     }
 
+    //Set W5500 server MAC, IP,..
+    uint8_t esp32_s3_base_mac_addr[6];
+    uint8_t init_mac_status = 0;
+    ESP_ERROR_CHECK(esp_read_mac(esp32_s3_base_mac_addr, ESP_MAC_WIFI_STA));
+    for(uint8_t module_index = 0; module_index < NUM_MODULES; module_index++)
+    {
+        if(memcmp(s_omni_module_eth_info[module_index].mac,
+                   esp32_s3_base_mac_addr, 
+                   sizeof(esp32_s3_base_mac_addr)) == 0)
+        {
+            //copy mac from predefine data
+            memcpy(s_w5500_server_info.mac, 
+                   esp32_s3_base_mac_addr, 
+                   sizeof(esp32_s3_base_mac_addr));
+            //copy ip from predefine data
+            memcpy(s_w5500_server_info.ip, 
+                   s_omni_module_eth_info[module_index].ip, 
+                   sizeof(esp32_s3_base_mac_addr));
+            wizchip_setnetinfo(&s_w5500_server_info);
+            ESP_LOGI("W5500", "Network configured.");
+            ESP_LOGI("W5500", "Base MAC Address (Wi-Fi STA): %02X:%02X:%02X:%02X:%02X:%02X",
+                    s_w5500_server_info.mac[0],  s_w5500_server_info.mac[1],  s_w5500_server_info.mac[2],  
+                    s_w5500_server_info.mac[3],  s_w5500_server_info.mac[4],  s_w5500_server_info.mac[5]);
+            ESP_LOGI("W5500", "IP Address: %d.%d.%d.%d",
+                    s_w5500_server_info.ip[0],  s_w5500_server_info.ip[1],  
+                    s_w5500_server_info.ip[2],  s_w5500_server_info.ip[3]);
+            init_mac_status = 1;
+        }
+    }
+
+    // Use default MAC, IP if cant fine predefine MAC
+    if(!init_mac_status)
+    {
+        ESP_LOGE("W5500", 
+                 "Can't find predefined MAC Address. Use default MAC and IP");
+        wizchip_setnetinfo(&s_w5500_server_info);
+        ESP_LOGE("W5500", "Network configured.");
+        ESP_LOGE("W5500", "Base MAC Address (Wi-Fi STA): %02X:%02X:%02X:%02X:%02X:%02X",
+                    s_w5500_server_info.mac[0],  s_w5500_server_info.mac[1],  s_w5500_server_info.mac[2],  
+                    s_w5500_server_info.mac[3],  s_w5500_server_info.mac[4],  s_w5500_server_info.mac[5]);
+        ESP_LOGE("W5500", "IP Address: %d.%d.%d.%d",
+                    s_w5500_server_info.ip[0],  s_w5500_server_info.ip[1],  
+                    s_w5500_server_info.ip[2],  s_w5500_server_info.ip[3]);
+    }
+
     // Check PHY
     ESP_LOGI("W5500", "Checking for Ethernet link...");
+    ESP_LOGI("W5500", "Waiting till PHY ready ...\n");
     while (!(getPHYCFGR() & PHYCFGR_LNK_ON)) 
     {
-        ESP_LOGI("W5500", "Waiting till PHY ready ...\n");
     }
     ESP_LOGI("W5500", "Ethernet link is UP.");
-
-    //Set W5500 server MAC, IP,..
-    wizchip_setnetinfo(&s_w5500_server_info);
-    ESP_LOGI("W5500", "Network configured. IP: %d.%d.%d.%d", 
-                       s_w5500_server_info.ip[0], 
-                       s_w5500_server_info.ip[1], 
-                       s_w5500_server_info.ip[2], 
-                       s_w5500_server_info.ip[3]);
     ESP_LOGI("W5500", "W5500 base setup done, set up connect in main()");
 }
 
