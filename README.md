@@ -1,107 +1,140 @@
-| Supported Targets | ESP32 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+# ESP32 Motor Driver (omni / bdc) — esp32_motor_driver
 
-# Rotary Encoder Example
+Compact, well-organized ESP-IDF project for driving omni/BDC motors on ESP32-family MCUs. This repository contains firmware, BSP layers, libraries, examples, and tools used to build, flash and test a motor driver on ESP32 devices (project developed for personal use and experimentation).
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+## Highlights
+- ESP-IDF based project (tested with ESP-IDF v5.x — workspace includes v5_5_1 layout)
+- Modular layout: `app/`, `main/`, `bsp/`, `libs/`, `service/`, and `testing/` directories
+- Build & flash using `idf.py` (recommended) or CMake/Ninja workflows
+- Includes motor control algorithms (PID), encoder support, and convenient console utilities
 
-The PCNT peripheral is designed to count the number of rising and/or falling edges of an input signal. Each PCNT unit has two channels, which makes it possible to extract more information from two input signals than only one signal.
+## Repository layout
 
-This example shows how to make use of the HW features to decode the differential signals generated from a common rotary encoder -- [EC11](https://tech.alpsalpine.com/e/products/category/encorder/sub/01/series/ec11e/).
+- `app/` — application entry & core modules (omni motor control, app-level CMake)
+- `bsp/` — board support package and low-level hardware glue (GPIO, PWM, ADC mappings)
+- `main/` — main application (C entry, example usage)
+- `service/` — auxiliary services and daemons used by the firmware
+- `libs/` — reusable libraries (bdc_motor, pid_ctl, ether_, ...)
+- `testing/`, `ultilis/` — test utilities, tuners, and console helpers
+- `build/` — build output (ignored in version control normally)
+- `sdkconfig`, `CMakeLists.txt` — project config and top-level build files
 
-The signals a rotary encoder produces (and what can be handled by this example) are based on a 2-bit gray code available on 2 digital data signal lines. The typical encoders use 3 output pins: 2 for the signals and one for the common signal usually GND.
+See the top-level `CMakeLists.txt` and per-folder `CMakeLists.txt` for build wiring.
 
-Typical signals:
+## Quick contract
 
-```text
-A      +-----+     +-----+     +-----+
-             |     |     |     |
-             |     |     |     |
-             +-----+     +-----+
-B         +-----+     +-----+     +-----+
-                |     |     |     |
-                |     |     |     |
-                +-----+     +-----+
+- Inputs: compiled firmware built by the ESP-IDF toolchain; GPIO/power connections from the host to motors/encoders.
+- Outputs: motor control PWM, encoder readouts, console diagnostics, optional telemetry via serial or network.
+- Success criteria: firmware builds without errors for the selected target, flashes to device, and basic motor commands produce expected motor movement.
 
- +--------------------------------------->
-                CW direction
+## Prerequisites
+
+- Windows 10/11 (PowerShell) or any platform supported by ESP-IDF
+- ESP-IDF toolchain installed (tested with ESP-IDF v5.x). Follow official setup:
+
+	- Install Python 3.10+ and required packages
+	- Install the ESP-IDF tools and set up environment variables
+
+See https://docs.espressif.com/projects/esp-idf for detailed setup steps.
+
+If you have the `esp-idf` extension installed or use the IDF Command Prompt, the following commands assume your environment is active.
+
+## Build & Flash (PowerShell)
+
+Open a PowerShell session with ESP-IDF environment activated (or run the `export`/`set` scripts provided by your ESP-IDF install). Replace <PORT> with your device COM port (e.g., COM3).
+
+Build the project:
+
+```powershell
+# From repository root
+idf.py set-target esp32s3
+idf.py build
 ```
 
-## How to Use Example
+Flash the firmware and monitor serial output:
 
-### Hardware Required
-
-* An ESP development board
-* EC11 rotary encoder (or other encoders which can produce quadrature waveforms)
-
-Connection :
-
-```text
-      +--------+              +---------------------------------+
-      |        |              |                                 |
-      |      A +--------------+ GPIO_A (internal pull up)       |
-      |        |              |                                 |
-+-------+      |              |                                 |
-|     | |  GND +--------------+ GND                             |
-+-------+      |              |                                 |
-      |        |              |                                 |
-      |      B +--------------+ GPIO_B (internal pull up)       |
-      |        |              |                                 |
-      +--------+              +---------------------------------+
+```powershell
+idf.py -p COM3 flash monitor
 ```
 
-The GPIO used by the example can be changed according to your board by `EXAMPLE_EC11_GPIO_A` and `EXAMPLE_EC11_GPIO_B` in [source file](main/rotary_encoder_example_main.c).
+If you prefer a separate flash step:
 
-### Build and Flash
-
-By configuring one of the EC11 GPIO (e.g. `EXAMPLE_EC11_GPIO_A`) as a wake up source, you can make the rotary encoder wake the system from light sleep. This example can illustrate this feature if you enable the `EXAMPLE_WAKE_UP_LIGHT_SLEEP` from the menuconfig.
-
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
-
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
-
-## Example Output
-
-```text
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (325) example: install pcnt unit
-I (335) example: set glitch filter
-I (345) example: install pcnt channels
-I (395) example: set edge and level actions for pcnt channels
-I (405) example: add watch points and register callbacks
-I (405) example: clear pcnt unit
-I (415) example: start pcnt unit
-I (1415) example: Pulse count: 0
-I (2415) example: Pulse count: 8
-I (3415) example: Pulse count: 27
-I (4415) example: Pulse count: 40
-I (4705) example: Watch point event, count: 50
-I (5705) example: Pulse count: 72
-I (6705) example: Pulse count: 96
-I (6785) example: Watch point event, count: 100
-I (6785) example: Watch point event, count: 0
-I (7785) example: Pulse count: 8
-I (8785) example: Pulse count: 8
-I (9225) example: Watch point event, count: 0
-I (10225) example: Pulse count: -20
-I (11225) example: Pulse count: -28
-I (12225) example: Pulse count: -48
-I (12995) example: Watch point event, count: -50
-I (13995) example: Pulse count: -68
-I (14995) example: Pulse count: -82
-I (15995) example: Pulse count: -92
-I (16875) example: Watch point event, count: -100
-I (16875) example: Watch point event, count: 0
-I (17875) example: Pulse count: -12
-I (18875) example: Pulse count: -12
-I (19875) example: Pulse count: -12
+```powershell
+idf.py -p COM3 flash
+idf.py monitor
 ```
 
-This example enables the 4X mode to parse the rotary signals, which means, each complete rotary step will result in PCNT counter increasing or decreasing by 4, depending on the direction of rotation.
-The example adds five watch points, events will be triggered when counter reaches to any watch point.
+Notes:
+- If you use a specific ESP32 variant (esp32s3, esp32s2, etc.), set the target appropriately: `idf.py set-target esp32s3`.
+- If the project is pre-configured with a `sdkconfig`, you can inspect or tweak it with `idf.py menuconfig`.
 
-## Troubleshooting
+## Configuration
 
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+- `sdkconfig` contains build-time configuration (peripherals enabled, driver options, FreeRTOS settings). Run:
+
+```powershell
+idf.py menuconfig
+```
+
+to adjust pin mappings, PWM frequency, PID defaults, or other options.
+
+## Wiring / Hardware
+
+This repository supports typical motor driver setups (PWM outputs to motor driver, encoder inputs, power sensing). Typical connections:
+
+- Motor driver PWM inputs: connect to configured PWM-capable GPIOs
+- Motor driver direction inputs: connect to GPIOs if using H-bridge direction pins
+- Encoder A/B channels: connect to GPIOs configured for pulse counting or interrupts
+- Power/Ground: common ground between ESP32 board and motor driver; ensure motor power supply can handle stall currents
+
+Pin mappings are defined in the BSP headers under `bsp/include/omni_bsp.h` and `bsp/omni_bsp.c`. Inspect and adjust there or in `menuconfig` as needed.
+
+Safety
+- Add motor disconnect / kill switch and current limiting in hardware where possible.
+- Start with no-load tests and low PWM duty to verify direction and encoder counts before applying full power.
+
+## Usage
+
+- Use the console utilities under `ultilis/omni_console` or the `main`/`app` entry to send commands to the motor controller.
+- Typical workflow:
+	1. Build & flash
+	2. Open monitor: `idf.py monitor`
+	3. From the console, run commands like `motor start`, `motor stop`, `motor set-speed <id> <rpm>` (commands depend on the console implementation in `ultilis`).
+
+Refer to `service/` and `app/` code for exact CLI commands and RPC/IPC endpoints.
+
+
+## Tests & PID Tuning
+
+- `testing/pid_tuning/` contains utilities for tuning PID loops. You can run on-device tests and log results to serial.
+- Implement unit tests or hardware-in-the-loop tests under `testing/` as needed.
+
+## Development notes
+
+- To add a library, place it under `libs/` and add a matching `CMakeLists.txt` to include it in the build.
+- Keep hardware-specific pin mappings in `bsp/` so higher-level code stays portable.
+
+## CI / Build hints
+
+- The project uses CMake with ESP-IDF. For automated builds, ensure the CI runner installs ESP-IDF and exports environment variables before calling `idf.py build`.
+
+## Contributing
+
+1. Fork the repo
+2. Create a branch for your change
+3. Make changes and add tests if applicable
+4. Run `idf.py build` and verify changes
+5. Open a pull request with a clear description
+
+Please follow existing code style and add a short test where possible.
+
+## License
+
+This repository does not include a license file by default. If you want to publish or share the code, add a `LICENSE` file (MIT, Apache-2.0, or whichever license you prefer).
+
+## Contact / Authors
+
+Repo owner: vlata135 
+
+— End of README —
+
