@@ -47,6 +47,15 @@ static esp_err_t omni_drv_create(omni_t* _app)
     _app->drv.m_pid_ctrl_m0 = omni_get_pid(0);
     _app->drv.m_pid_ctrl_m1 = omni_get_pid(1);
     _app->drv.m_pid_ctrl_m2 = omni_get_pid(2);
+    _app->drv.m_ema_m0 = omni_filter_ema_get_handle(0);
+    _app->drv.m_ema_m1 = omni_filter_ema_get_handle(1);
+    _app->drv.m_ema_m2 = omni_filter_ema_get_handle(2);
+
+    // for(int = 0; i < NUM_MODULES; i++)
+    // {
+
+    // }
+
 
     return 0;
 }

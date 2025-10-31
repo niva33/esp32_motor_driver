@@ -33,6 +33,10 @@ typedef struct
         pid_ctrl_block_handle_t m_pid_ctrl_m1;
         pid_ctrl_block_handle_t m_pid_ctrl_m2;
 
+        ema_t* m_ema_m0;
+        ema_t* m_ema_m1;
+        ema_t* m_ema_m2;
+
     }drv;
 
 } omni_t;

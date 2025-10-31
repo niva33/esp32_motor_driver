@@ -40,6 +40,7 @@ extern "C"{
 #include "esp_mac.h"
 
 #include "pid_ctrl.h"
+#include "ema.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -110,6 +111,9 @@ enum
 #define CONSOLE_RX_BUFFER_SIZE          1024
 
 
+#define FILTER_EMA_ALPHA                0.7f
+
+
 typedef struct omni_module_eth_info_t
 {
     uint8_t mac[6]; ///< Source Mac Address
@@ -129,6 +133,8 @@ bdc_motor_handle_t omni_get_bdc_motor(uint8_t _motor_index);
 pcnt_unit_handle_t omni_get_encoder(uint8_t _motor_index);
 
 pid_ctrl_block_handle_t omni_get_pid(uint8_t _motor_index);
+
+ema_t* omni_filter_ema_get_handle(uint8_t _motor_index);
 
 
 

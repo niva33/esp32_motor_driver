@@ -8,7 +8,8 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define BDC_PID_EXPECT_SPEED (30u)
+#define BDC_PID_EXPECT_SPEED        (30u)
+#define USING_MA_FILTER
 
 /*******************************************************************************
  * Prototypes
@@ -42,9 +43,9 @@ static void omni_main_proc(void* _arg)
     int cur_pulse_count_0 = 0;
     int cur_pulse_count_1 = 0;
     int cur_pulse_count_2 = 0;
-    int32_t real_pulse_m0 = 0;
-    int32_t real_pulse_m1 = 0;
-    int32_t real_pulse_m2 = 0;
+    float real_pulse_m0 = 0;
+    float real_pulse_m1 = 0;
+    float real_pulse_m2 = 0;
 
 
     omni_t* temp = g_omni_app_default;
@@ -54,6 +55,18 @@ static void omni_main_proc(void* _arg)
 
     //m0
     real_pulse_m0 = cur_pulse_count_0 - last_pulse_count_m0;
+    if(real_pulse_m0 <  BDC_ENCODER_PCNT_LOW_LIMIT/4)
+    {
+        real_pulse_m0 = real_pulse_m0 + BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+    if(real_pulse_m0 > BDC_ENCODER_PCNT_HIGH_LIMIT/4)
+    {
+        real_pulse_m0 = real_pulse_m0 -  BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+    float check_m0 ;
+    ema_update(g_omni_app_default->drv.m_ema_m0, real_pulse_m0, &check_m0);
+    real_pulse_m0 = check_m0;
+
     last_pulse_count_m0 = cur_pulse_count_0;
     float error_m0 = (float)g_sp_0 - real_pulse_m0;
     float new_speed_m0 = 0;
@@ -66,7 +79,6 @@ static void omni_main_proc(void* _arg)
     {
         new_speed_m0 = 0;
     }
-
     if(new_speed_m0 < 0)
     {
         new_speed_m0 = - new_speed_m0;
@@ -75,6 +87,17 @@ static void omni_main_proc(void* _arg)
 
     //m1
     real_pulse_m1 = cur_pulse_count_1 - last_pulse_count_m1;
+    if(real_pulse_m1 <  BDC_ENCODER_PCNT_LOW_LIMIT/4)
+    {
+        real_pulse_m1 = real_pulse_m1 + BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+    if(real_pulse_m1 > BDC_ENCODER_PCNT_HIGH_LIMIT/4)
+    {
+        real_pulse_m1 = real_pulse_m1 -  BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+    float check_m1 ;
+    ema_update(g_omni_app_default->drv.m_ema_m1, real_pulse_m1, &check_m1);
+    real_pulse_m1 = check_m1;
     last_pulse_count_m1 = cur_pulse_count_1;
     float error_m1 = (float)g_sp_1 - real_pulse_m1;
     float new_speed_m1 = 0;
@@ -96,6 +119,19 @@ static void omni_main_proc(void* _arg)
 
     //m2
     real_pulse_m2 = cur_pulse_count_2 - last_pulse_count_m2;
+    if(real_pulse_m2 <  BDC_ENCODER_PCNT_LOW_LIMIT/4)
+    {
+        real_pulse_m2 = real_pulse_m2 + BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+    if(real_pulse_m2 > BDC_ENCODER_PCNT_HIGH_LIMIT/4)
+    {
+        real_pulse_m2 = real_pulse_m2 -  BDC_ENCODER_PCNT_HIGH_LIMIT;
+    }
+
+    ESP_LOGI("PID", "real_pulse_m2: %f", real_pulse_m2);
+    float check_m2 ;
+    ema_update(g_omni_app_default->drv.m_ema_m2, real_pulse_m2, &check_m2);
+    real_pulse_m2 = check_m2;
     last_pulse_count_m2 = cur_pulse_count_2;
     float error_m2 = (float)g_sp_2 - real_pulse_m2;
     float new_speed_m2 = 0;
@@ -141,20 +177,12 @@ static void omni_main_proc(void* _arg)
     {
         bdc_motor_reverse(g_omni_app_default->drv.m_bdc_motor_m2);
     }
-
     
-    // bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m1);
-    // bdc_motor_forward(g_omni_app_default->drv.m_bdc_motor_m2);
+    // ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, real_pulse_m1 %d, g_sp_1 %d, real_pulse_m2 %d, g_sp_2 %d",
+    //                 real_pulse_m0, g_sp_0, real_pulse_m1, g_sp_1, real_pulse_m2, g_sp_2) ;
 
-    
-    ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, real_pulse_m1 %d, g_sp_1 %d, real_pulse_m2 %d, g_sp_2 %d",
-                    real_pulse_m0, g_sp_0, real_pulse_m1, g_sp_1, real_pulse_m2, g_sp_2) ;
+    // if(real_pulse_m2 > 10)
 
-    // ESP_LOGI("PID", "real_pulse_m0 %d, real_pulse_m1 %d, real_pulse_m2 %d, new_speed_m0 %f, new_speed_m1 %f, new_speed_m2 %f",
-    //                 real_pulse_m0, real_pulse_m1, real_pulse_m2, new_speed_m0, new_speed_m1, new_speed_m2) ;
-
-        // ESP_LOGI("PID", "real_pulse_m0 %d, g_sp_0 %d, new_speed_m0 %f,g_dir_0 %d",
-        //              real_pulse_m0, g_sp_0, new_speed_m0, g_dir_0);
 }
 
 void omni_entry()

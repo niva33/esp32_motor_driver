@@ -12,7 +12,9 @@
 #include "bdc_motor.h"
 #include "pid_ctrl.h"
 
+
 #include "omni_bsp.h"
+
 
 
 /*******************************************************************************
@@ -97,6 +99,13 @@ static pid_ctrl_block_handle_t s_pid_m2 = NULL;
 static esp_console_repl_t *s_console_repl = NULL;
 
 static spi_device_handle_t s_spi_handle = NULL;
+
+static ema_t s_ema_m0;
+
+static ema_t s_ema_m1;
+
+static ema_t s_ema_m2;
+
 
 static wiz_NetInfo s_w5500_server_info = 
 {
@@ -638,6 +647,14 @@ static void omni_w5500_spi_writebyte(uint8_t wb)
     assert(spi_device_polling_transmit(s_spi_handle, &t) == ESP_OK);
 }
 
+static void filter_ema_init()
+{
+    ema_init(&s_ema_m0, FILTER_EMA_ALPHA, 0, 0);
+    ema_init(&s_ema_m1, FILTER_EMA_ALPHA, 0, 0);
+    ema_init(&s_ema_m2, FILTER_EMA_ALPHA, 0, 0);
+    ESP_LOGI("EMA", "EMA Initialized done");
+
+}
 
 esp_err_t omni_bsp_init()
 {
@@ -648,6 +665,7 @@ esp_err_t omni_bsp_init()
     omni_pid_init();
     // omni_console_init();
     omni_w5500_init();
+    filter_ema_init();
     ESP_LOGI("DONE", "install pcnt channels");
 
     return ESP_OK;
@@ -719,6 +737,22 @@ pid_ctrl_block_handle_t omni_get_pid(uint8_t _motor_index)
     return NULL;
 }
 
+ema_t* omni_filter_ema_get_handle(uint8_t _motor_index)
+{
+    if(_motor_index == OMNI_BDC_MOTOR_M0)
+    {
+        return &s_ema_m0;
+    }
+    else if(_motor_index == OMNI_BDC_MOTOR_M1)
+    {
+        return &s_ema_m1;
+    }
+    else if(_motor_index == OMNI_BDC_MOTOR_M2)
+    {
+        return &s_ema_m2;
+    }
+    return NULL;
+}
 
 void tinysh_char_out(unsigned char c)
 {
