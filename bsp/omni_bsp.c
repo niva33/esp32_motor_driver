@@ -126,8 +126,8 @@ static omni_module_eth_info_t s_omni_module_eth_info[NUM_MODULES] =
     },
     //module 1
     {
-        .mac = {0x30, 0xED, 0xA0, 0x11, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 101}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD3, 0x0C},
+        .ip = {192, 168, 1, 105}
     },
     //module 2
     {
@@ -136,13 +136,13 @@ static omni_module_eth_info_t s_omni_module_eth_info[NUM_MODULES] =
     },
     //module 3
     {
-        .mac = {0x30, 0xED, 0xA0, 0x13, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 102}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xE4},
+        .ip = {192, 168, 1, 103}
     },
     //module 4
     {
-        .mac = {0x30, 0xED, 0xA0, 0x14, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 103}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xF0},
+        .ip = {192, 168, 1, 102}
     },
     //module 5
     {
@@ -428,8 +428,8 @@ static void omni_pid_init()
     //m0
     pid_ctrl_parameter_t pid_m0_runtime_param = 
     {
-        .kp = 25.0,
-        .ki = 10,
+        .kp = 20.0,
+        .ki = 3.0,
         .kd = 0,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
@@ -563,7 +563,7 @@ static void omni_w5500_init()
     uint8_t version = getVERSIONR();
     if(version != 0x04)
     {
-        ESP_LOGE("W5500", "SPI communicnjnnunnuununnuuunnnnnnnnation failed. Loop forever. Version %d", version);
+        ESP_LOGE("W5500", "SPI communication failed. Loop forever. Version %d", version);
         for(int k = 0; k <10; k++)
         {
             version = getSIMR();
@@ -616,8 +616,8 @@ static void omni_w5500_init()
         wizchip_setnetinfo(&s_w5500_server_info);
         ESP_LOGE("W5500", "Network configured.");
         ESP_LOGE("W5500", "Base MAC Address (Wi-Fi STA): %02X:%02X:%02X:%02X:%02X:%02X",
-                    s_w5500_server_info.mac[0],  s_w5500_server_info.mac[1],  s_w5500_server_info.mac[2],  
-                    s_w5500_server_info.mac[3],  s_w5500_server_info.mac[4],  s_w5500_server_info.mac[5]);
+                    esp32_s3_base_mac_addr[0],  esp32_s3_base_mac_addr[1],  esp32_s3_base_mac_addr[2],  
+                    esp32_s3_base_mac_addr[3],  esp32_s3_base_mac_addr[4],  esp32_s3_base_mac_addr[5]);
         ESP_LOGE("W5500", "IP Address: %d.%d.%d.%d",
                     s_w5500_server_info.ip[0],  s_w5500_server_info.ip[1],  
                     s_w5500_server_info.ip[2],  s_w5500_server_info.ip[3]);
