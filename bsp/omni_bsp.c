@@ -120,59 +120,59 @@ static wiz_NetInfo s_w5500_server_info =
 static omni_module_eth_info_t s_omni_module_eth_info[NUM_MODULES] = 
 {
     //module 0
-    {
-        .mac = {0x30, 0xED, 0xA0, 0x10, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 100}
-    },
+    // {
+    //     .mac = {0x30, 0xED, 0xA0, 0x10, 0xD2, 0xF8},
+    //     .ip = {192, 168, 1, 100}
+    // },
     //module 1
     {
         .mac = {0x30, 0xED, 0xA0, 0x17, 0xD3, 0x0C},
-        .ip = {192, 168, 1, 105}
+        .ip = {192, 168, 1, 111}
     },
     //module 2
     {
         .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 110}
+        .ip = {192, 168, 1, 112}
     },
     //module 3
     {
         .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xE4},
-        .ip = {192, 168, 1, 103}
+        .ip = {192, 168, 1, 113}
     },
     //module 4
     {
         .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xF0},
-        .ip = {192, 168, 1, 102}
+        .ip = {192, 168, 1, 114}
     },
     //module 5
     {
-        .mac = {0x30, 0xED, 0xA0, 0x15, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 104}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD3, 0x1C},
+        .ip = {192, 168, 1, 115}
     },
     //module 6
     {
-        .mac = {0x30, 0xED, 0xA0, 0x16, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 105}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD3, 0x24},
+        .ip = {192, 168, 1, 116}  
     },
     //module 7
     {
-        .mac = {0x30, 0xED, 0xA0, 0x19, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 106}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD3, 0x00},
+        .ip = {192, 168, 1, 117}
     },
     //module 8
     {
         .mac = {0x30, 0xED, 0xA0, 0x21, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 107}
+        .ip = {192, 168, 1, 118}
     },
     //module 9
     {
-        .mac = {0x30, 0xED, 0xA0, 0x32, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 109}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xDC},
+        .ip = {192, 168, 1, 119}
     },
     //module 10
     {
-        .mac = {0x30, 0xED, 0xA0, 0x56, 0xD2, 0xF8},
-        .ip = {192, 168, 1, 99}
+        .mac = {0x30, 0xED, 0xA0, 0x17, 0xD2, 0xB4},
+        .ip = {192, 168, 1, 120}
     }
 };
 

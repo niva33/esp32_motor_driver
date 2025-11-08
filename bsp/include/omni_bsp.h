@@ -102,7 +102,7 @@ enum
 #define W5500_SPI_HOST                  SPI2_HOST
 #define W5500_TCP_SOCKET_NUM            (0u)
 #define W5500_TCP_PORT                  (5010u)
-#define W5500_SPI_CLK_FREQ              (50*1000*1000)
+#define W5500_SPI_CLK_FREQ              (60*1000*1000)
 
 
 

@@ -214,7 +214,7 @@ static void omni_main_proc(void* _arg)
     // if(real_pulse_m2 > 10)
     // ESP_LOGI("PID", "new_speed_m0: %f", new_speed_m0);
 
-}
+}                 
 
 void omni_entry()
 {
@@ -289,7 +289,7 @@ void omni_entry()
                         {
                             g_sp_2 = - g_sp_2;
                         }
-                        ESP_LOGI("TAG", "Received %d bytes: '%s'", ret, (char*)g_data_buf);
+                        ESP_LOGI("TAG", "Received % d bytes: '%s'", ret, (char*)g_data_buf);
                     }
                 }
             } 
