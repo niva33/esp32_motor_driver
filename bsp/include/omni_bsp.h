@@ -61,6 +61,8 @@ enum
 };
 
 #define NUM_MODULES                      (10u)
+#define NUM_MOTORS                       (3u)
+
 
 #define CONSOLE_UART_PORT_NUM           CONFIG_ESP_CONSOLE_UART_NUM
 

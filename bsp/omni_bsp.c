@@ -404,8 +404,8 @@ static void omni_encoder_init()
 
     pcnt_chan_config_t chan_b_config_m2 = 
     {
-        .edge_gpio_num = BDC_M0_ENCODER_GPIO_B,
-        .level_gpio_num = BDC_M0_ENCODER_GPIO_A,
+        .edge_gpio_num = BDC_M2_ENCODER_GPIO_B,
+        .level_gpio_num = BDC_M2_ENCODER_GPIO_A,
     };
     pcnt_channel_handle_t pcnt_chan_b_m2 = NULL;
     // ESP_ERROR_CHECK(pcnt_new_channel(s_encoder_m0, &chan_b_config, &pcnt_chan_b));
@@ -415,8 +415,6 @@ static void omni_encoder_init()
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_a_m2, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
     ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan_b_m2, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_b_m2, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
-    // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_HIGH_LIMIT));
-    // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(s_encoder_m0, BDC_ENCODER_PCNT_LOW_LIMIT));
     ESP_ERROR_CHECK(pcnt_unit_enable(s_encoder_m2));
     ESP_ERROR_CHECK(pcnt_unit_clear_count(s_encoder_m2));
     ESP_ERROR_CHECK(pcnt_unit_start(s_encoder_m2));

@@ -37,25 +37,13 @@ static esp_err_t omni_drv_create(omni_t* _app)
     {
         return -1;
     }
-    // create bdc_control
-    _app->drv.m_bdc_motor_m0 = omni_get_bdc_motor(0);
-    _app->drv.m_bdc_motor_m1 = omni_get_bdc_motor(1);
-    _app->drv.m_bdc_motor_m2 = omni_get_bdc_motor(2);
-    _app->drv.m_encoder_m0 = omni_get_encoder(0);
-    _app->drv.m_encoder_m1 = omni_get_encoder(1);
-    _app->drv.m_encoder_m2 = omni_get_encoder(2);
-    _app->drv.m_pid_ctrl_m0 = omni_get_pid(0);
-    _app->drv.m_pid_ctrl_m1 = omni_get_pid(1);
-    _app->drv.m_pid_ctrl_m2 = omni_get_pid(2);
-    _app->drv.m_ema_m0 = omni_filter_ema_get_handle(0);
-    _app->drv.m_ema_m1 = omni_filter_ema_get_handle(1);
-    _app->drv.m_ema_m2 = omni_filter_ema_get_handle(2);
-
-    // for(int = 0; i < NUM_MODULES; i++)
-    // {
-
-    // }
-
+    for(uint8_t motor_idx = 0; motor_idx < NUM_MOTORS; motor_idx++)
+    {
+        _app->drv.m_bdc_motor[motor_idx] = omni_get_bdc_motor(motor_idx);
+        _app->drv.m_encoder[motor_idx] = omni_get_encoder(motor_idx);
+        _app->drv.m_pid_ctrl[motor_idx] = omni_get_pid(motor_idx);
+        _app->drv.m_ema[motor_idx] = omni_filter_ema_get_handle(motor_idx);
+    }
 
     return 0;
 }
